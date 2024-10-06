@@ -1,5 +1,4 @@
-# Gymma
-## a software for gym management
+# Gymma - a software for gym management
 
 1. Configuração do ambiente:
    
