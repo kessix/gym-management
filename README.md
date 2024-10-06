@@ -2,10 +2,11 @@
 Gymma - a software for gym management
 
 1. Configuração do ambiente:
+   
 Instalar Go, Gin, GORM, e PostgreSQL.
-Configurar o banco de dados PostgreSQL.
 
 2. Estrutura do projeto:
+
 main.go: Arquivo principal onde o servidor será iniciado.
 models/: Contém os modelos do banco de dados.
 controllers/: Contém a lógica de CRUD.
