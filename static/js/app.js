@@ -18,8 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
         }
-    };
-    
+    };    
 
     // Função para popular a tabela com usuários
     const populateTable = (users) => {
