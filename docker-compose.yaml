@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_USER=gymma_service
+      - DB_PASSWORD=gymma_service
+      - DB_NAME=gymma_service
+      - DB_PORT=5432
+    depends_on:
+      - db
+    networks:
+      - gym-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: gymma_service
+      POSTGRES_PASSWORD: gymma_service
+      POSTGRES_DB: gymma_service
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - gym-net
+
+networks:
+  gym-net:
+
+volumes:
+  postgres_data:
