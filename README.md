@@ -16,6 +16,7 @@
 
 Estrutura completa:
 
+```html
 gym-management/
 ├── Config/
 │   └── database.go
