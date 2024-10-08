@@ -13,11 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/users');
             const data = await response.json();
+            console.log('Dados da API:', data); // Verifique se a estrutura dos dados está correta
             populateTable(data.data);
         } catch (error) {
             console.error('Erro ao buscar usuários:', error);
         }
     };
+    
 
     // Função para popular a tabela com usuários
     const populateTable = (users) => {
