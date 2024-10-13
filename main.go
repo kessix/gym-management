@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,12 +10,37 @@ import (
 	_ "github.com/lib/pq"
 )
 
+type User struct {
+	Id    int
+	Name  string
+	Email string
+	Age   int
+}
+
 func Read(w http.ResponseWriter, r *http.Request) {
 
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
 
+	u := User{}
+	err := json.NewDecoder(r.Body).Decode(&u)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO users (name, email, age) VALUES ($1, $2, $3)", u.Name, u.Email, u.Age)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 var db *sql.DB
