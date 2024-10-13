@@ -18,6 +18,36 @@ type User struct {
 }
 
 func Read(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	rows, err := db.Query("SELECT * FROM users")
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	defer rows.Close()
+	data := make([]User, 0)
+	for rows.Next() {
+		user := User{}
+		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Age)
+		if err != nil {
+			fmt.Println("Server failed to handle", err)
+			return
+		}
+		data = append(data, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(data)
 
 }
 
