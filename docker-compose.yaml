@@ -9,9 +9,9 @@ services:
       - "8080:8080"
     environment:
       - DB_HOST=db
-      - DB_USER=gymma_service
-      - DB_PASSWORD=gymma_service
-      - DB_NAME=gymma_service
+      - DB_USER=gymma_user
+      - DB_PASSWORD=gymma_pass
+      - DB_NAME=gymma_db
       - DB_PORT=5432
     depends_on:
       - db
@@ -21,9 +21,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: gymma_service
-      POSTGRES_PASSWORD: gymma_service
-      POSTGRES_DB: gymma_service
+      POSTGRES_USER: gymma_user
+      POSTGRES_PASSWORD: gymma_pass
+      POSTGRES_DB: gymma_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:

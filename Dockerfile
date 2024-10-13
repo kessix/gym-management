@@ -31,8 +31,8 @@ WORKDIR /app
 
 # Copiar o binário da etapa de construção para o contêiner final
 COPY --from=builder /app/gym-management .
-COPY --from=builder /app/static ./static
-COPY --from=builder /app/templates ./templates
+# COPY --from=builder /app/static ./static
+# COPY --from=builder /app/templates ./templates
 
 # Expor a porta da aplicação
 EXPOSE 8080
