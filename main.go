@@ -74,7 +74,52 @@ func Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func Update(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
 
+	id := r.URL.Query().Get("id")
+	up := User{}
+	err := json.NewDecoder(r.Body).Decode(&up)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	row := db.QueryRow("SELECT * FROM users WHERE id=$1", id)
+	u := User{}
+	err = row.Scan(&u.Id, &u.Name, &u.Email, &u.Age)
+
+	switch {
+	case err == sql.ErrNoRows:
+		http.NotFound(w, r)
+		return
+	case err != nil:
+		http.Error(w, http.StatusText(405), http.StatusInternalServerError)
+		return
+	}
+
+	if up.Name != "" {
+		u.Name = up.Name
+	}
+
+	if up.Email != "" {
+		u.Email = up.Email
+	}
+
+	if up.Age != 0 {
+		u.Age = up.Age
+	}
+
+	_, err = db.Exec("UPDATE users SET name=$1, email=$2, age=$3 WHERE id=$4", u.Name, u.Email, u.Age, u.Id)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(u)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +170,7 @@ func init() {
 func main() {
 	http.HandleFunc("/users/read", Read)
 	http.HandleFunc("/users/create", Create)
-	http.HandleFunc("/users/update", Read)
-	http.HandleFunc("/users/delete", Create)
+	http.HandleFunc("/users/update", Update)
+	http.HandleFunc("/users/delete", Delete)
 	http.ListenAndServe(":8080", nil)
 }
