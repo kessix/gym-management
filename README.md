@@ -18,22 +18,6 @@ Estrutura completa:
 
 ```html
 gym-management/
-├── Config/
-│   └── database.go
-├── controllers/
-│   └── userController.go
-├── models/
-│   └── user.go
-├── routes/
-│   └── routes.go
-├── static/
-│   ├── css/
-│   │   └── styles.css
-│   ├── js/
-│   │   └── app.js
-│   └── index.html
-├── templates/
-│   └── index.html
 ├── go.mod
 ├── go.sum
 ├── Dockerfile
