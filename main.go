@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -29,7 +30,7 @@ type Payment struct {
 	UserId      int
 	Month       string
 	Status      bool
-	PaymentDate sql.NullTime // Usando sql.NullTime para lidar com valores nulos no campo de data
+	PaymentDate *time.Time
 }
 
 func Read(w http.ResponseWriter, r *http.Request) {
@@ -235,22 +236,23 @@ func ReadPayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT * FROM payments")
+	rows, err := db.Query("SELECT id, user_id, month, status, payment_date FROM payments")
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return
 	}
-
 	defer rows.Close()
-	payments := make([]Payment, 0)
+
+	payments := []Payment{}
+
 	for rows.Next() {
-		payment := Payment{}
-		err := rows.Scan(&payment.Id, &payment.UserId, &payment.Month, &payment.Status, &payment.PaymentDate)
+		var p Payment
+		err := rows.Scan(&p.Id, &p.UserId, &p.Month, &p.Status, &p.PaymentDate)
 		if err != nil {
-			fmt.Println("Server failed to handle", err)
+			fmt.Println("Server failed to handle sql:", err)
 			return
 		}
-		payments = append(payments, payment)
+		payments = append(payments, p)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -268,20 +270,25 @@ func CreatePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	p := Payment{}
+	var p Payment
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		fmt.Println("Server failed to handle", err)
+		fmt.Println("Server failed to handle json:", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO payments (user_id, month, status, payment_date) VALUES ($1, $2, $3, $4)", p.UserId, p.Month, p.Status, p.PaymentDate)
+	// Inserir no banco de dados, `p.PaymentDate` pode ser nil
+	_, err = db.Exec("INSERT INTO payments (user_id, month, status, payment_date) VALUES ($1, $2, $3, $4)",
+		p.UserId, p.Month, p.Status, p.PaymentDate)
 	if err != nil {
-		fmt.Println("Server failed to handle", err)
+		fmt.Println("Server failed to insert payment:", err)
+		http.Error(w, "Failed to create payment", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	fmt.Fprintf(w, "Payment created successfully")
 }
 
 func UpdatePayment(w http.ResponseWriter, r *http.Request) {
@@ -291,20 +298,42 @@ func UpdatePayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.URL.Query().Get("id")
-	up := Payment{}
-	err := json.NewDecoder(r.Body).Decode(&up)
-	if err != nil {
-		fmt.Println("Server failed to handle", err)
+	if id == "" {
+		http.Error(w, "Missing payment ID", http.StatusBadRequest)
 		return
 	}
 
-	_, err = db.Exec("UPDATE payments SET user_id=$1, month=$2, status=$3, payment_date=$4 WHERE id=$5", up.UserId, up.Month, up.Status, up.PaymentDate, id)
+	var p Payment
+	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		fmt.Println("Server failed to handle", err)
+		fmt.Println("Server failed to handle json:", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// Verificando se o pagamento existe antes de atualizar
+	row := db.QueryRow("SELECT id FROM payments WHERE id = $1", id)
+	var existingPayment Payment
+	err = row.Scan(&existingPayment.Id)
+	if err == sql.ErrNoRows {
+		http.Error(w, "Payment not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "Server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Atualizando apenas os campos enviados
+	_, err = db.Exec("UPDATE payments SET user_id = $1, month = $2, status = $3, payment_date = $4 WHERE id = $5",
+		p.UserId, p.Month, p.Status, p.PaymentDate, id)
+	if err != nil {
+		fmt.Println("Server failed to update payment:", err)
+		http.Error(w, "Failed to update payment", http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "Payment updated successfully")
 }
 
 func DeletePayment(w http.ResponseWriter, r *http.Request) {
