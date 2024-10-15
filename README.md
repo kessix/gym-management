@@ -2,15 +2,11 @@
 
 1. Configuração do ambiente:
    
-- Instalar Go, Gin, GORM, e PostgreSQL.
+- Instalar Go e PostgreSQL.
 
 2. Estrutura do projeto:
 
-- main.go: Arquivo principal onde o servidor será iniciado. (Atualmente tudo está aqui!)
-(Para implementar!) - models/: Contém os modelos do banco de dados.
-(Para implementar!) - controllers/: Contém a lógica de CRUD.
-(Para implementar!) - routes/: Define as rotas.
-(Para implementar!) - config/: Contém as configurações (incluindo conexão com o banco de dados).
+- main.go: Arquivo principal onde o servidor será iniciado. (Atualmente tudo está aqui, por enquanto!)
 - static/: Contém arquivos estáticos como CSS e JavaScript.
 - templates/: Contém templates HTML (usaremos Go templates).
 
