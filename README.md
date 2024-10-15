@@ -18,6 +18,7 @@ Estrutura completa:
 
 ```html
 gym-management/
+<<<<<<< HEAD
 │
 ├── main.go
 ├── index.html
@@ -26,3 +27,10 @@ gym-management/
     │   └── styles.css
     └── js
         └── main.js
+=======
+├── go.mod
+├── go.sum
+├── Dockerfile
+├── docker-compose.yml
+└── main.go
+>>>>>>> 76f1bac29e20a11c2a049c6dbf44f38ed699005e

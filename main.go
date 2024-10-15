@@ -12,9 +12,24 @@ import (
 
 type User struct {
 	Id    int
+	Plan  Plan
 	Name  string
 	Email string
 	Age   int
+}
+
+type Plan struct {
+	Id    int
+	Name  string
+	Price float64
+}
+
+type Payment struct {
+	Id          int
+	UserId      int
+	Month       string
+	Status      bool
+	PaymentDate sql.NullTime // Usando sql.NullTime para lidar com valores nulos no campo de data
 }
 
 func Read(w http.ResponseWriter, r *http.Request) {
@@ -23,7 +38,12 @@ func Read(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.Query("SELECT * FROM users")
+	query := `
+        SELECT u.id, u.name, u.email, u.age, p.id, p.name, p.price
+        FROM users u
+        LEFT JOIN plans p ON u.plan_id = p.id
+    `
+	rows, err := db.Query(query)
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return
@@ -33,11 +53,13 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	data := make([]User, 0)
 	for rows.Next() {
 		user := User{}
-		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Age)
+		plan := Plan{}
+		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Age, &plan.Id, &plan.Name, &plan.Price)
 		if err != nil {
 			fmt.Println("Server failed to handle", err)
 			return
 		}
+		user.Plan = plan
 		data = append(data, user)
 	}
 
@@ -48,7 +70,6 @@ func Read(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(data)
-
 }
 
 func Create(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +85,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO users (name, email, age) VALUES ($1, $2, $3)", u.Name, u.Email, u.Age)
+	_, err = db.Exec("INSERT INTO users (name, email, age, plan_id) VALUES ($1, $2, $3, $4)", u.Name, u.Email, u.Age, u.Plan.Id)
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return
@@ -87,39 +108,13 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	row := db.QueryRow("SELECT * FROM users WHERE id=$1", id)
-	u := User{}
-	err = row.Scan(&u.Id, &u.Name, &u.Email, &u.Age)
-
-	switch {
-	case err == sql.ErrNoRows:
-		http.NotFound(w, r)
-		return
-	case err != nil:
-		http.Error(w, http.StatusText(405), http.StatusInternalServerError)
-		return
-	}
-
-	if up.Name != "" {
-		u.Name = up.Name
-	}
-
-	if up.Email != "" {
-		u.Email = up.Email
-	}
-
-	if up.Age != 0 {
-		u.Age = up.Age
-	}
-
-	_, err = db.Exec("UPDATE users SET name=$1, email=$2, age=$3 WHERE id=$4", u.Name, u.Email, u.Age, u.Id)
+	_, err = db.Exec("UPDATE users SET name=$1, email=$2, age=$3, plan_id=$4 WHERE id=$5", up.Name, up.Email, up.Age, up.Plan.Id, id)
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(u)
 }
 
 func Delete(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +132,196 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
 
+func ReadPlan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	rows, err := db.Query("SELECT * FROM plans")
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	defer rows.Close()
+	plans := make([]Plan, 0)
+	for rows.Next() {
+		plan := Plan{}
+		err := rows.Scan(&plan.Id, &plan.Name, &plan.Price)
+		if err != nil {
+			fmt.Println("Server failed to handle", err)
+			return
+		}
+		plans = append(plans, plan)
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(plans)
+}
+
+func CreatePlan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	p := Plan{}
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO plans (name, price) VALUES ($1, $2)", p.Name, p.Price)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func UpdatePlan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	up := Plan{}
+	err := json.NewDecoder(r.Body).Decode(&up)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	_, err = db.Exec("UPDATE plans SET name=$1, price=$2 WHERE id=$3", up.Name, up.Price, id)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func DeletePlan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+
+	_, err := db.Exec("DELETE FROM plans WHERE id=$1", id)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func ReadPayment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	rows, err := db.Query("SELECT * FROM payments")
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	defer rows.Close()
+	payments := make([]Payment, 0)
+	for rows.Next() {
+		payment := Payment{}
+		err := rows.Scan(&payment.Id, &payment.UserId, &payment.Month, &payment.Status, &payment.PaymentDate)
+		if err != nil {
+			fmt.Println("Server failed to handle", err)
+			return
+		}
+		payments = append(payments, payment)
+	}
+
+	if err = rows.Err(); err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(payments)
+}
+
+func CreatePayment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	p := Payment{}
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	_, err = db.Exec("INSERT INTO payments (user_id, month, status, payment_date) VALUES ($1, $2, $3, $4)", p.UserId, p.Month, p.Status, p.PaymentDate)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+}
+
+func UpdatePayment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	up := Payment{}
+	err := json.NewDecoder(r.Body).Decode(&up)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	_, err = db.Exec("UPDATE payments SET user_id=$1, month=$2, status=$3, payment_date=$4 WHERE id=$5", up.UserId, up.Month, up.Status, up.PaymentDate, id)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func DeletePayment(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, http.StatusText(405), http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+
+	_, err := db.Exec("DELETE FROM payments WHERE id=$1", id)
+	if err != nil {
+		fmt.Println("Server failed to handle", err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 var db *sql.DB
@@ -172,5 +356,16 @@ func main() {
 	http.HandleFunc("/users/create", Create)
 	http.HandleFunc("/users/update", Update)
 	http.HandleFunc("/users/delete", Delete)
+
+	http.HandleFunc("/plans/read", ReadPlan)
+	http.HandleFunc("/plans/create", CreatePlan)
+	http.HandleFunc("/plans/update", UpdatePlan)
+	http.HandleFunc("/plans/delete", DeletePlan)
+
+	http.HandleFunc("/payments/read", ReadPayment)
+	http.HandleFunc("/payments/create", CreatePayment)
+	http.HandleFunc("/payments/update", UpdatePayment)
+	http.HandleFunc("/payments/delete", DeletePayment)
+
 	http.ListenAndServe(":8080", nil)
 }
