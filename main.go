@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"os"
 	"time"
@@ -381,7 +382,15 @@ func init() {
 	fmt.Println("You connected to your database.")
 }
 
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/index.html"))
+	tmpl.Execute(w, nil)
+}
+
 func main() {
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
 	http.HandleFunc("/users/read", Read)
 	http.HandleFunc("/users/create", Create)
 	http.HandleFunc("/users/update", Update)
@@ -396,6 +405,8 @@ func main() {
 	http.HandleFunc("/payments/create", CreatePayment)
 	http.HandleFunc("/payments/update", UpdatePayment)
 	http.HandleFunc("/payments/delete", DeletePayment)
+
+	http.HandleFunc("/", indexHandler)
 
 	http.ListenAndServe(":8080", nil)
 }

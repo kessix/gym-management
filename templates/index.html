@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academia - Gerenciamento</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>GYMMA - FORMATOTAL</h1>
+    </header>
+
+    <main>
+        <!-- Formulário de criação de usuário -->
+        <section>
+            <h2>Cadastrar Novo Usuário</h2>
+            <form id="userForm">
+                <input type="text" id="name" placeholder="Nome" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="number" id="age" placeholder="Idade" required>
+                <select id="planId">
+                    <option value="">Selecione um Plano</option>
+                </select>
+                <label for="status">Ativo:</label>
+                <input type="checkbox" id="status">
+                <button type="submit">Cadastrar Usuário</button>
+            </form>
+        </section>
+
+        <!-- Tabela de usuários -->
+        <section>
+            <h2>Lista de Usuários</h2>
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>Idade</th>
+                        <th>Plano</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Formulário de criação de pagamento -->
+        <section>
+            <h2>Registrar Pagamento</h2>
+            <form id="paymentForm">
+                <select id="userId">
+                    <option value="">Selecione um Usuário</option>
+                </select>
+                <input type="month" id="month" required>
+                <label for="status">Pago:</label>
+                <input type="checkbox" id="paymentStatus">
+                <button type="submit">Registrar Pagamento</button>
+            </form>
+        </section>
+
+        <!-- Tabela de pagamentos -->
+        <section>
+            <h2>Pagamentos</h2>
+            <table id="paymentTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuário</th>
+                        <th>Mês</th>
+                        <th>Status</th>
+                        <th>Data do Pagamento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Formulário de criação de plano -->
+        <section>
+            <h2>Cadastrar Novo Plano</h2>
+            <form id="planForm">
+                <input type="text" id="planName" placeholder="Nome do Plano" required>
+                <input type="number" id="planPrice" placeholder="Preço do Plano" required>
+                <button type="submit">Cadastrar Plano</button>
+            </form>
+        </section>
+
+        <!-- Tabela de planos -->
+        <section>
+            <h2>Lista de Planos</h2>
+            <table id="planTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome do Plano</th>
+                        <th>Preço</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+    </main>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
