@@ -12,11 +12,12 @@ import (
 )
 
 type User struct {
-	Id    int
-	Plan  Plan
-	Name  string
-	Email string
-	Age   int
+	Id     int
+	Plan   Plan
+	Name   string
+	Email  string
+	Age    int
+	Status bool
 }
 
 type Plan struct {
@@ -40,7 +41,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `
-        SELECT u.id, u.name, u.email, u.age, p.id, p.name, p.price
+        SELECT u.id, u.name, u.email, u.age, u.status, p.id, p.name, p.price
         FROM users u
         LEFT JOIN plans p ON u.plan_id = p.id
     `
@@ -55,7 +56,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		user := User{}
 		plan := Plan{}
-		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Age, &plan.Id, &plan.Name, &plan.Price)
+		err := rows.Scan(&user.Id, &user.Name, &user.Email, &user.Age, &user.Status, &plan.Id, &plan.Name, &plan.Price)
 		if err != nil {
 			fmt.Println("Server failed to handle", err)
 			return
@@ -86,7 +87,7 @@ func Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO users (name, email, age, plan_id) VALUES ($1, $2, $3, $4)", u.Name, u.Email, u.Age, u.Plan.Id)
+	_, err = db.Exec("INSERT INTO users (name, email, age, plan_id, status) VALUES ($1, $2, $3, $4, $5)", u.Name, u.Email, u.Age, u.Plan.Id, u.Status)
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return
@@ -109,7 +110,7 @@ func Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("UPDATE users SET name=$1, email=$2, age=$3, plan_id=$4 WHERE id=$5", up.Name, up.Email, up.Age, up.Plan.Id, id)
+	_, err = db.Exec("UPDATE users SET name=$1, email=$2, age=$3, plan_id=$4, status=$5 WHERE id=$6", up.Name, up.Email, up.Age, up.Plan.Id, up.Status, id)
 	if err != nil {
 		fmt.Println("Server failed to handle", err)
 		return

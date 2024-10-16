@@ -5,6 +5,7 @@ CREATE TABLE users (
     name VARCHAR(50) NOT NULL,
     email VARCHAR(100),
     age NUMERIC,
+    status BOOLEAN NOT NULL,
     CONSTRAINT fk_plan FOREIGN KEY (plan_id) REFERENCES plans(id) -- Chave estrangeira para a tabela de planos
 );
 
